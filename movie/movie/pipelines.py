@@ -50,5 +50,9 @@ class MoviePipeline(object):
 class TencentPipeline(object):
     @check_spider_pipeline
     def process_item(self, item, spider):
-         print("TecentPipe is called.................")
+         print("TecentPipe is called................."+ item['name'])
+         with open("tencent_job.txt","a") as fp:
+            fp.write("###########################\n")
+            fp.write(item['name'].encode('utf8')+"\n")
+         return item
          return item
