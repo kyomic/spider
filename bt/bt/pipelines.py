@@ -8,6 +8,6 @@
 from itemadapter import ItemAdapter
 
 
-class Bt66Pipeline:
+class BtPipeline:
     def process_item(self, item, spider):
         return item

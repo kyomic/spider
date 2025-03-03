@@ -19,3 +19,7 @@ Scrapy genspider meiju meijutt.tv
 3. 启动程序
 Scrapy crawl meiju
 
+
+
+git rm --cached *.pyc
+git rm --cached -r __pycache__/

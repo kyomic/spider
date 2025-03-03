@@ -1,0 +1,25 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Scrapy: Debug Shell",
+            "type": "python",
+            "request": "launch",
+            "module": "scrapy",
+            "args": [
+                "crawl",
+                "bt66"  // 替换为你的爬虫名称
+            ],
+            // "args": [
+            //     "shell",
+            //     "https://bt66.org/news-type-id-9-type--area--year--order-addtime.html"
+            // ],
+            "cwd": "${workspaceFolder}/github/spider/bt",  // 指定工作目录
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}

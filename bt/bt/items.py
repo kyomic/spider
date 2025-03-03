@@ -6,7 +6,7 @@
 import scrapy
 
 
-class Bt66Item(scrapy.Item):
+class BtItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
     pass
