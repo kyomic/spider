@@ -1,29 +1,106 @@
 from urllib import response
 import scrapy
 import requests
+import os
+import json
+import re
 from PIL import Image
-import pytesseract  # pip install pillow pytesseract tesseract
+#import pytesseract  # pip install pillow pytesseract tesseract
 from io import BytesIO
 
 from urllib.parse import urlencode
 class Loginable(scrapy.Spider):
+    session = {}
+    cache_session = False
     def __init__(self):
         print('init Loginable')
         #input('请输入用户名:')
 
+    def generate_useragent(self):
+        return 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    
+    def get_session_file_name(self):
+        return '0067.org.session'
+    
+    
     def login(self, username, password):
         return True
     
+    def init_session(self):
+        filename = self.get_session_file_name()
+        if os.path.exists(filename) and self.cache_session:
+            print('session file exists')
+            filename = self.get_session_file_name()
+            try:
+                with open(filename, 'r') as file:
+                    self.session = json.load(file)
+                print(f"Session 数据已成功从 {filename} 读取")
+            except Exception as e:
+                print(f"读取文件时出错: {e}")
+            
+        else:
+            print('session file not exists')
+            response = requests.get(
+                url='https://0067.org/user-login.html',
+                headers={
+                    'User-Agent': self.generate_useragent(),
+                }
+            )
+            if not isinstance(self.session, dict):
+                self.session = {}
+            
+            str = "_gj=cRQeXUVDXElWVjMAY3YZQBZaHToTRnZFTg; expires=Thu, 06-Mar-2025 05:22:03 GMT; Max-Age=86400; path=/, _dq=cRQeXUVDXElWVjMAY3YZQhZdTzoTRnMSHQ; expires=Thu, 06-Mar-2025 05:22:03 GMT; Max-Age=86400; path=/"
+            # 按逗号分割字符串，处理多个 cookie
+            str = response.headers['Set-Cookie']
+            cookies = str.split(';')
+            # 提取每个 cookie 的 key=value 部分
+            cookie_parts = []
+            for cookie in cookies:
+                # 按分号分割，取第一个部分即 key=value
+                cookie = re.sub(r'path=/,', '', cookie)
+                key_value = cookie.strip()
+                
+                print("value", key_value)
+                # 检查是否包含 '='，如果不包含则跳过
+                if '=' not in key_value:
+                    continue
+                # 按等号分割，取第一个部分即 key
+                key = key_value.split('=')[0]
+                # 检查 key 是否为 'expires' 或 'Max-Age'，如果是则跳过
+                if key in ['expires', 'Max-Age', 'path']:
+                    continue
+                # 否则将 key=value 添加到结果列表
+                cookie_parts.append(key_value)
+            # 重新组合成字符串
+            cleaned_cookies = '; '.join(cookie_parts)
+            self.session['cookie'] = cleaned_cookies
+
+            filename = self.get_session_file_name()
+            try:
+                with open(filename, 'w') as file:
+                    json.dump(self.session, file, indent=4)
+                print(f"Session 数据已成功以 JSON 格式写入 {filename}")
+            except Exception as e:
+                print(f"写入文件时出错: {e}")
+        
+
+        print('session:', self.session)
+        return self.session
+
+        
+        
+
+
     def config_login(self):
         return {
-            'url': 'https://bt66.org/user-loginpost.html',
+            'url': 'https://0067.org/user-loginpost.html',
             'method': 'POST',
             'data': {
                 'user_email':'riacn@qq.com',
                 'user_pwd':'1qaz1qaz',
                 'user_vcode':{
                     'type':'qrcode',
-                    'url': 'https://bt66.org/index.php?s=Vcode-Index',
+                    'url': 'https://0067.org/index.php?s=Vcode-Index',
                     'name':'验证码',
                 },
                 'user_remember':1
@@ -31,6 +108,8 @@ class Loginable(scrapy.Spider):
         }
 
     def check_login(self):
+        session = self.init_session()
+        
         try:
             # raise Exception("config is None, please check config_login")
             
@@ -54,7 +133,11 @@ class Loginable(scrapy.Spider):
                         if sub_url is None:
                             raise Exception("sub_url is None, please check config_login")
                         
-                        response = requests.get(sub_url)
+                        response = requests.get(sub_url, headers={
+                            'User-Agent': self.generate_useragent(),
+                            'Cookie': session['cookie']
+                        })
+                        print("会话cookie:", session)
                         response.raise_for_status()
                         # 打开图片
                         image = Image.open(BytesIO(response.content))
@@ -65,11 +148,12 @@ class Loginable(scrapy.Spider):
                         params[key] = user_input
 
             headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                'Cookie': 'ff_user=ZWtwbWNsWJqWzJudn8mi2F3QrtTPoclYzJ6dnMrKyM6kXZqdlpeZZpTIZ2pnnmqWn5tqypZwm2fJa2ZnncSZxWWbXZ6WnpqZmsaiq1qdmsqblW7Kx5mXmMqdZ2bKlZrDaG%2BbmmOYmm2XmGtulw%3D%3D'
+                'User-Agent': self.generate_useragent(),
+                'Cookie': session['cookie']
             }
             response = requests.post(
                 url=config['url'],
+                headers=headers,
                 data=urlencode(config['data']).encode('utf-8'), 
             )
             json = response.json()
