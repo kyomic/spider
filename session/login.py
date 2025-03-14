@@ -12,11 +12,11 @@ from urllib.parse import urlencode
 class Loginable(scrapy.Spider):
     session = {}
     # 是否缓存session
-    cache_session = False
+    cache_session = True
     cookie_parts = []
     def __init__(self):
         print('init Loginable')
-        self.logout()
+        #self.logout()
         #input('请输入用户名:')
 
     def generate_useragent(self):
@@ -38,8 +38,6 @@ class Loginable(scrapy.Spider):
             # 按分号分割，取第一个部分即 key=value
             cookie = re.sub(r'path=/,', '', cookie)
             key_value = cookie.strip()
-            
-            print("value", key_value)
             # 检查是否包含 '='，如果不包含则跳过
             if '=' not in key_value:
                 continue
@@ -61,10 +59,22 @@ class Loginable(scrapy.Spider):
             if not found:
                 self.cookie_parts.append({'name': key, 'value':value})
             # 否则将 key=value 添加到结果列表
-            print("COOKIE", self.cookie_parts)
         # 重新组合成字符串
         return self.cookie_parts
     
+    def has_cookie(self, name):
+        found = False
+        for c in self.cookie_parts:
+            if c.get('name') == name:
+                found = True
+                break
+        return found
+    def get_cookie_value(self, name):
+        for c in self.cookie_parts:
+            if c.get('name') == name:
+                return c.get('value')
+        return None
+
     def update_cookie(self, response):
         str = response.headers['Set-Cookie']
         self.parse_cookie_str(str)
@@ -142,36 +152,38 @@ class Loginable(scrapy.Spider):
             except Exception as e:
                 return
             
-           
-                
-            
-            if not isinstance(self.session, dict):
-                self.session = {}
-            
-            str = "_gj=cRQeXUVDXElWVjMAY3YZQBZaHToTRnZFTg; expires=Thu, 06-Mar-2025 05:22:03 GMT; Max-Age=86400; path=/, _dq=cRQeXUVDXElWVjMAY3YZQhZdTzoTRnMSHQ; expires=Thu, 06-Mar-2025 05:22:03 GMT; Max-Age=86400; path=/"
-            # 按逗号分割字符串，处理多个 cookie
-            
-           
-            
-           
-            self.session['cookie'] =  self.get_cookie()
-            filename = self.get_session_file_name()
-            try:
-                with open(filename, 'w') as file:
-                    json.dump(self.session, file, indent=4)
-                print(f"Session 数据已成功以 JSON 格式写入 {filename}")
-            except Exception as e:
-                print(f"写入文件时出错: {e}")
-        
-
+    
+        self.flush_cookie()
         print('session:', self.session)
         return self.session
 
         
-        
+    def flush_cookie(self):
+        self.session['cookie'] =  self.get_cookie()
+        filename = self.get_session_file_name()
+        try:
+            with open(filename, 'w') as file:
+                json.dump(self.session, file, indent=4)
+            print(f"Session 数据已成功以 JSON 格式写入 {filename}")
+        except Exception as e:
+            print(f"写入文件时出错: {e}")
 
 
     def config_login(self):
+        return {
+            'url': 'https://0067.org/user-loginpost.html',
+            'method': 'POST',
+            'data': {
+                'user_email':'kyomic@163.com',
+                'user_pwd':'1qaz1qaz',
+                'user_vcode':{
+                    'type':'input',
+                    'url': 'https://0067.org/index.php?s=Vcode-Index',
+                    'name':'验证码',
+                },
+                'user_remember':1
+            },
+        }
         return {
             'url': 'https://0067.org/user-loginpost.html',
             'method': 'POST',
@@ -198,7 +210,12 @@ class Loginable(scrapy.Spider):
         )
     def check_login(self):
         session = self.init_session()
-        
+        user_cookie = self.get_cookie_value('ff_user')
+        if user_cookie is not None:
+            print('已登录')
+            return self.session
+        else:
+            print('未登录，准备登录')
         try:
             # raise Exception("config is None, please check config_login")
             
@@ -264,8 +281,13 @@ class Loginable(scrapy.Spider):
                 print('登录失败', json['info'])
                 self.logout()
                 return
+                
+            self.update_cookie(response)
+            self.flush_cookie()
         except Exception as e:
             print(f"执行 check_login 时出错: {e}")
+        
+        return self.session
    
     def after_login(self, response):
         print('登录成功', response)
@@ -329,6 +351,7 @@ class Abc():
 if __name__ == '__main__':
     instance = Test()
     # 由于 check_login 是生成器，需要使用 for 循环或 next 函数来获取结果
-    params = instance.check_login()
+    session = instance.check_login()
+    print('会话数据:',session)
     
     
