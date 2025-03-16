@@ -189,13 +189,14 @@ class Loginable(scrapy.Spider):
 
     def logout(self):
         self.load_session()
-        requests.get(
+        response = requests.get(
             url='https://0067.org/user-logout.html',
             headers={
                 'User-Agent': self.generate_useragent(),
                 'Cookie': self.get_cookie()
             }
         )
+        print('退出登录', response.headers)
     def check_login(self):
         session = self.init_session()
         
@@ -257,6 +258,7 @@ class Loginable(scrapy.Spider):
             respnse_header = response.headers
             print('response',json)
             print('响应头:',respnse_header)
+            self.logout()
             if( response.status_code !=200):
                 print('登录失败', json.info)
                 return
