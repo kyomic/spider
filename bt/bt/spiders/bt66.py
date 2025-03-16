@@ -15,12 +15,13 @@ from session.login import Loginable
 class Bt66Spider(Loginable,scrapy.Spider):
     name = "bt66"  # 这里的名称必须与命令中的 `bt66` 一致
     allowed_domains = ["bt66.org"]
-    start_urls = ["https://bt66.org/news-type-id-9-type--area--year--order-addtime.html"]
+    start_urls = ["https://0067.org/news-type-id-9-type--area--year--order-addtime.html"]
+    session = {}
     def __init__(self):
         super().__init__()  # 调用 Spider 的 __init__
         super(Loginable, self).__init__()  # 调用 Loginable 的 __init__
         
-        self.check_login()
+        session = self.check_login()
         
     def config_login(self):
         print("配置登录")
@@ -46,11 +47,12 @@ class Bt66Spider(Loginable,scrapy.Spider):
         }
         
     def start_requests(self):
-        
+        print(self.start_urls[0])
+        print("开始请求", self.session['cookie'])
        
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Cookie': 'ff_user=ZWtwbWNsWJqWzJudn8mi2F3QrtTPoclYzJ6dnMrKyM6kXZqdlpeZZpTIZ2pnnmqWn5tqypZwm2fJa2ZnncSZxWWbXZ6WnpqZmsaiq1qdmsqblW7Kx5mXmMqdZ2bKlZrDaG%2BbmmOYmm2XmGtulw%3D%3D'
+            'Cookie': self.session['cookie']
         }
         # 发送请求并设置错误回调
         # meta={'handle_httpstatus_list': [302]} 表示允许的状态码列表
@@ -59,12 +61,14 @@ class Bt66Spider(Loginable,scrapy.Spider):
     def parse(self, response):
         # 解析逻辑
         print("执行结果response")
-        list = response.css('.container .nopl').get()
+        list = response.css('[role="main"] tr').get()
         if list is None:
             print("没有数据")
             return
         if len(list) == 0:
             print("没有数据")
+        
+        print("数据长度", len(list))
         print(list)
         pass
 
