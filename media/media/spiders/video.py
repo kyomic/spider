@@ -7,6 +7,7 @@ class VideoSpider(scrapy.Spider):
     name = "video"
     allowed_domains = ["4khdr.cn"]
     start_urls = ["https://4khdr.cn"]
+    testing = True
     cur_page = 1
     max_page = 1
 
@@ -29,7 +30,10 @@ class VideoSpider(scrapy.Spider):
         
         
         print("max_page", self.max_page)
-        list = list[0:1]
+        if self.testing:
+            # 只获取第一个元素
+            list = list[0:1]
+            
         for item in list:
             selector = Selector(text=item)
             href = selector.css('a::attr(href)').get()
@@ -38,7 +42,7 @@ class VideoSpider(scrapy.Spider):
                 media_item = MediaItem()
                 media_item['referer'] = full_url
                 print("a标签的href属性:", full_url)
-                yield media_item
+                #yield media_item
                 yield scrapy.Request(url=full_url, callback=self.parse_detail, errback=self.errback_httpbin,  meta={'handle_httpstatus_list': [302]})
             else:
                 print("a标签没有href属性")
@@ -53,6 +57,8 @@ class VideoSpider(scrapy.Spider):
 
     
     def parse_detail( self, response):
+         # 从 meta 中取出 media_item
+        media_item = response.meta.get('media_item')
         print("执行结果response")
         root = response.css('.t_fsz')
         html_content = root.css('td').get()
@@ -62,12 +68,20 @@ class VideoSpider(scrapy.Spider):
             print(f"标签内容: {match[0].strip()}")
             print(f"匹配内容: {match[1].strip()}")
             print()
-        pattern = r'<strong>(.*?)</strong><br>\n*([^>]+)<br>'
-        matches = re.findall(pattern, html_content, re.DOTALL)
-        for match in matches:
-            print(f"标签内容: {match[0].strip()}")
-            print(f"匹配内容: {match[1].strip()}")
-            print()
+        
+        try:
+            cast_pattern = r'<strong>主演名单</strong><br>(.*?)<br>'
+            cast = re.findall(cast_pattern, html_content, re.DOTALL)
+            summary_pattern = r'<strong>剧情简介</strong><br>(.*?)<br>'
+            summary = re.findall(summary_pattern, html_content, re.DOTALL)
+            
+            media_item['cast'] = cast[0].strip()
+            media_item['summary'] = summary[0].strip()
+            yield media_item
+        except Exception as e:
+            print("解析失败", e)
+        
+        
 
 
     def get_page_url(self, page ):
