@@ -23,6 +23,8 @@ class MediaItem(scrapy.Item):
     writer = scrapy.Field()
     # 类型，如： 剧情 / 喜剧
     genre = scrapy.Field()
+    # 地区，如： 中国大陆 / 美国
+    region = scrapy.Field()
     # 语言
     language = scrapy.Field()
     # 片长
@@ -35,4 +37,10 @@ class MediaItem(scrapy.Item):
     cast = scrapy.Field()
     # 剧情简介
     summary = scrapy.Field()
+    
+    
+    poster_url = scrapy.Field()
+    still_url = scrapy.Field()
+    poster_file = scrapy.Field()
+    still_file = scrapy.Field()
     pass

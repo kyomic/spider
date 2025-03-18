@@ -91,7 +91,27 @@ ROBOTSTXT_OBEY = True
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
 
-CSV_FIELDS = ['title', 'link', 'likes', 'replies', 'referer']
+
+CSV_FIELDS = [
+    'title', 
+    'year', 
+    'alias', 
+    'director', 
+    'writer',
+    'genre', 
+    'region', 
+    'language', 
+    'runtime', 
+    'douban_rating', 
+    'imdb_rating', 
+    'cast', 
+    'summary', 
+    'referer',
+    'poster_url',
+    'still_url',
+    'poster_file',
+    'still_file'
+]
 ITEM_PIPELINES = {
     'media.pipelines.CsvWriterPipeline': 300,
 }

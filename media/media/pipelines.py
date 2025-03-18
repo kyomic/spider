@@ -7,6 +7,7 @@
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
 import csv
+from scrapy.exporters import CsvItemExporter
 
 class MediaPipeline:
     def process_item(self, item, spider):
@@ -18,9 +19,11 @@ class MediaPipeline:
 class CsvWriterPipeline:
     def open_spider(self, spider):
         # 打开 CSV 文件
-        self.file = open('items.csv', 'w', newline='', encoding='utf-8')
-        # 创建 CSV 写入器，使用更新后的 fieldnames
-        self.writer = csv.DictWriter(self.file, fieldnames=spider.settings.get('CSV_FIELDS', []))
+        
+        #self.file = open('items.csv', 'w', newline='', encoding='utf-8')
+        self.file = open('items.csv', 'w', newline='', encoding='utf-8-sig')
+        # 创建 CSV 写入器，使用更新后的 fieldnames，并设置 quoting 参数为 csv.QUOTE_ALL
+        self.writer = csv.DictWriter(self.file, fieldnames=spider.settings.get('CSV_FIELDS', []), quoting=csv.QUOTE_ALL)
         # 写入 CSV 文件的表头
         self.writer.writeheader()
 
