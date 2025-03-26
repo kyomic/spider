@@ -18,7 +18,7 @@ Scrapy genspider meiju meijutt.tv
 
 3. 启动程序
 Scrapy crawl meiju
-
+Scrapy crawl bt66
 
 
 git rm --cached *.pyc

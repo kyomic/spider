@@ -92,9 +92,14 @@ class Loginable(scrapy.Spider):
         if self.cookie_parts is None:
             self.cookie_parts = []
         
-        print('COOKIE=',self.cookie_parts)
         return  ';'.join([f"{item['name']}={item['value']}" for item in self.cookie_parts])
-        
+    
+    def get_cookies( self ):
+        cookies = []
+        for item in self.cookie_parts:
+            cookies.append({'name': item['name'], 'value': item['value']})
+        return cookies
+            
     def load_session( self ):
         filename = self.get_session_file_name()
         if os.path.exists(filename) and self.cache_session:
@@ -210,6 +215,7 @@ class Loginable(scrapy.Spider):
         )
         print('退出登录', response.headers)
     def check_login(self):
+        print('检查登录')
         session = self.init_session()
         user_cookie = self.get_cookie_value('ff_user')
         if user_cookie is not None:
@@ -217,77 +223,77 @@ class Loginable(scrapy.Spider):
             return self.session
         else:
             print('未登录，准备登录')
-        try:
-            # raise Exception("config is None, please check config_login")
-            
-            config = self.config_login()
-            if config is None:
-                raise Exception("config is None, please check config_login")
+            try:
+                # raise Exception("config is None, please check config_login")
+                
+                config = self.config_login()
+                if config is None:
+                    raise Exception("config is None, please check config_login")
 
-            params = config['data']
-            for key, value in params.items():
-                if isinstance(value, dict):
-                    print('kiey',key)
-                    sub_name = value.get('name')
-                    sub_value = value.get('value')  # 使用 get 方法避免 KeyError
-                    sub_type = value.get('type')
-                    sub_url = value.get('url')
-                    if sub_type == 'input':
-                        if sub_name:
+                params = config['data']
+                for key, value in params.items():
+                    if isinstance(value, dict):
+                        print('kiey',key)
+                        sub_name = value.get('name')
+                        sub_value = value.get('value')  # 使用 get 方法避免 KeyError
+                        sub_type = value.get('type')
+                        sub_url = value.get('url')
+                        if sub_type == 'input':
+                            if sub_name:
+                                user_input = input('请输入' + sub_name + '('+ key +'):')
+                                params[key] = user_input
+                        if sub_type == 'qrcode':
+                            if sub_url is None:
+                                raise Exception("sub_url is None, please check config_login")
+                            
+                            php_session_id_cookie = [cookie for cookie in self.session_cookies if 'PHPSESSID' in cookie]
+                            print('php session', php_session_id_cookie)
+                            response = requests.get(sub_url, headers={
+                                'User-Agent': self.generate_useragent(),
+                                #'Cookie': '; '.join(php_session_id_cookie)
+                            })
+                            print("会话cookie:", session, response.headers)
+                            response.raise_for_status()
+                            
+                            # 打开图片
+                            image = Image.open(BytesIO(response.content))
+                            download_path = "downloaded_image.jpg"
+                            image.save(download_path)
+                            print(f"图片已下载到 {download_path}")
                             user_input = input('请输入' + sub_name + '('+ key +'):')
                             params[key] = user_input
-                    if sub_type == 'qrcode':
-                        if sub_url is None:
-                            raise Exception("sub_url is None, please check config_login")
-                        
-                        php_session_id_cookie = [cookie for cookie in self.session_cookies if 'PHPSESSID' in cookie]
-                        print('php session', php_session_id_cookie)
-                        response = requests.get(sub_url, headers={
-                            'User-Agent': self.generate_useragent(),
-                            #'Cookie': '; '.join(php_session_id_cookie)
-                        })
-                        print("会话cookie:", session, response.headers)
-                        response.raise_for_status()
-                        
-                        # 打开图片
-                        image = Image.open(BytesIO(response.content))
-                        download_path = "downloaded_image.jpg"
-                        image.save(download_path)
-                        print(f"图片已下载到 {download_path}")
-                        user_input = input('请输入' + sub_name + '('+ key +'):')
-                        params[key] = user_input
 
-            headers = {
-                'User-Agent': self.generate_useragent(),
-                'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8',
-                #'Origin':'https://0067.org',
-                #'Referer':'https://0067.org/user-login.html',
-                'Cookie': self.get_cookie()
-            }
-            print('请求:', config['url'])
-            print('请求头:', headers)
-            response = requests.post(
-                url=config['url'],
-                headers=headers,
-                data=urlencode(config['data']).encode('utf-8'), 
-            )
-            json = response.json()
-            respnse_header = response.headers
-            print('response',json)
-            print('响应头:',respnse_header)
-            self.logout()
-            if( response.status_code !=200):
-                print('登录失败', json.info)
-                return
-            if json and json['data'] == 0:
-                print('登录失败', json['info'])
+                headers = {
+                    'User-Agent': self.generate_useragent(),
+                    'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8',
+                    #'Origin':'https://0067.org',
+                    #'Referer':'https://0067.org/user-login.html',
+                    'Cookie': self.get_cookie()
+                }
+                print('请求:', config['url'])
+                print('请求头:', headers)
+                response = requests.post(
+                    url=config['url'],
+                    headers=headers,
+                    data=urlencode(config['data']).encode('utf-8'), 
+                )
+                json = response.json()
+                respnse_header = response.headers
+                print('response',json)
+                print('响应头:',respnse_header)
                 self.logout()
-                return
-                
-            self.update_cookie(response)
-            self.flush_cookie()
-        except Exception as e:
-            print(f"执行 check_login 时出错: {e}")
+                if( response.status_code !=200):
+                    print('登录失败', json.info)
+                    return
+                if json and json['data'] == 0:
+                    print('登录失败', json['info'])
+                    self.logout()
+                    return
+                    
+                self.update_cookie(response)
+                self.flush_cookie()
+            except Exception as e:
+                print(f"执行 check_login 时出错: {e}")
         
         return self.session
    

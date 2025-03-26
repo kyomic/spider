@@ -90,3 +90,38 @@ ROBOTSTXT_OBEY = True
 # Set settings whose default value is deprecated to a future-proof value
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
+
+CSV_FIELDS = [
+    'title', 
+    'year', 
+    'alias', 
+    'director', 
+    'writer',
+    'genre', 
+    'region', 
+    'language', 
+    'runtime', 
+    'douban_rating', 
+    'imdb_rating', 
+    'douban_url',
+    'imdb_url',
+    'cast', 
+    'summary', 
+    'referer',
+    'resource_name',
+    'resource_url',
+    'resource_remark',
+    'resource_category',
+    'resource_size',
+    'resource_count',
+    'resource_created_at',
+    'resource_srt_url',
+    
+    'poster_url',
+    'still_url',
+    'poster_file',
+    'still_file'
+]
+ITEM_PIPELINES = {
+    'bt.pipelines.CsvWriterPipeline': 300,
+}
