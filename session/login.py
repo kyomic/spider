@@ -138,6 +138,7 @@ class Loginable(scrapy.Spider):
                 print('获取Token成功')
 
             except Exception as e:
+                print("cookie", self.get_cookie())
                 print(f"获取Token时出错: {e}")
                 return
             try:

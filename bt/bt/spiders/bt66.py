@@ -32,6 +32,20 @@ class Bt66Spider(Loginable, Pageable, scrapy.Spider):
         
     def config_login(self):
         print("配置登录Parent")
+        # return {
+        #     'url': 'https://0067.org/user-loginpost.html',
+        #     'method': 'POST',
+        #     'data': {
+        #         'user_email':'rian@qq.com',
+        #         'user_pwd':'1qaz1qaz',
+        #         'user_vcode':{
+        #             'type':'input',
+        #             'url': 'https://0067.org/index.php?s=Vcode-Index',
+        #             'name':'验证码',
+        #         },
+        #         'user_remember':1
+        #     },
+        # }
         return {
             'url': 'https://0067.org/user-loginpost.html',
             'method': 'POST',
